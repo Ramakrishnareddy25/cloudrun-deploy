@@ -21,11 +21,12 @@ jobs:
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         export_default_credentials: true
 
-    - name: Configure Docker for Artifact Registry
-      run: gcloud auth configure-docker europe-west2-docker.pkg.dev
+    # - name: Configure Docker for Artifact Registry
+    #   run: gcloud auth configure-docker europe-west2-docker.pkg.dev
 
     - name: Build and Push Docker Image
       run: |
+        gcloud auth configure-docker europe-west2-docker.pkg.dev
         IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
         docker build -t $IMAGE .
         docker push $IMAGE
