@@ -26,13 +26,13 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GOOGLE_PROJECT }}/test-repo/test:latest
+        IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
         docker build -t $IMAGE .
         docker push $IMAGE
 
     - name: Deploy to Cloud Run
       run: |
-        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GOOGLE_PROJECT }}/test-repo/test:latest
+        IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
         gcloud run deploy flask-app \
           --image $IMAGE \
           --region europe-west2 \
