@@ -17,7 +17,7 @@ jobs:
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        project_id: ${{ secrets.GOOGLE_PROJECT }}
         service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
         export_default_credentials: true
 
@@ -26,13 +26,13 @@ jobs:
 
     - name: Build and Push Docker Image
       run: |
-        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/test-repo/flask:latest
+        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GOOGLE_PROJECT }}/test-repo/flask:latest
         docker build -t $IMAGE .
         docker push $IMAGE
 
     - name: Deploy to Cloud Run
       run: |
-        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/test-repo/flask:latest
+        IMAGE=europe-west2-docker.pkg.dev/${{ secrets.GOOGLE_PROJECT }}/test-repo/flask:latest
         gcloud run deploy flask-app \
           --image $IMAGE \
           --region europe-west2 \
