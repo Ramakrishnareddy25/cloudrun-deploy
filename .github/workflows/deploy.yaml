@@ -29,6 +29,24 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
+    - name: setup python 3.12
+      uses: actions/setup-python@v3
+      with:
+         python-version: "3.12"
+
+    - name: Install dependencies
+      run: |
+         pyhton -m  pip install --upgrade pip
+         pip install flake8 pytest
+         if [-f requirements.txt]; then pip install -r requirements.txt; fi
+
+    - name: Lint the flakes
+      run: |
+       # stop the build if there aare python errors or undefined names
+       flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+       # exit-zero treats all errors as warnings. The Github editor is 127 chars wide
+       flake8 . --count --exit-zero --max-complexity=10 --max-line-lenth=127 --statistics
+
     - name: Authenticate to GCP
       uses: google-github-actions/auth@v2
       with:
