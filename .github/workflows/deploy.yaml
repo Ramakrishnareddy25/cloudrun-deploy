@@ -9,6 +9,8 @@ jobs:
   deploy:
     name: Build and Deploy
     runs-on: ubuntu-latest
+    env:
+      IMAGE: europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
 
     steps:
     - name: Checkout Code
@@ -64,7 +66,6 @@ jobs:
     - name: Build and Push Docker Image
       run: |
         gcloud auth configure-docker europe-west2-docker.pkg.dev
-        IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
         docker build -t $IMAGE .
 
 
