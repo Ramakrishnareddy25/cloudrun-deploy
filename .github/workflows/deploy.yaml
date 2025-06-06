@@ -66,6 +66,28 @@ jobs:
         gcloud auth configure-docker europe-west2-docker.pkg.dev
         IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
         docker build -t $IMAGE .
+
+
+    # # https://github.com/marketplace/actions/prisma-cloud-scan
+    # - name: Prisma Cloud image scan
+    #   id: scan
+    #   uses: PaloAltoNetworks/prisma-cloud-scan@v1.5
+    #   with:
+    #      pcc_console_url: ${{ secrets.PCC_CONSOLE_URL }}
+    #      pcc_user: ${{ secrets.PCC_USER }}
+    #      pcc_pass: ${{ secrets.PCC_PASS }}
+    #      image_name: $IMAGE
+
+    #   # (Optional) for compatibility with GitHub's code scanning alerts
+    # - name: Upload SARIF file
+    #   if: ${{ always() }} # necessary if using failure thresholds in the image scan
+    #   uses: github/codeql-action/upload-sarif@v2
+    #   with:
+    #     sarif_file: ${{ steps.scan.outputs.sarif_file }}
+
+    - name: Push Docker Image
+      run: |
+        gcloud auth configure-docker europe-west2-docker.pkg.dev
         docker push $IMAGE
 
     - name: Deploy to Cloud Run
