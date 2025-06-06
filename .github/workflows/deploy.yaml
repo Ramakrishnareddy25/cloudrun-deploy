@@ -87,7 +87,6 @@ jobs:
 
     - name: Push Docker Image
       run: |
-        gcloud auth configure-docker europe-west2-docker.pkg.dev
         docker push $IMAGE
 
     - name: Deploy to Cloud Run
