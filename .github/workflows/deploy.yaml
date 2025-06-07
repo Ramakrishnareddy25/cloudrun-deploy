@@ -1,17 +1,53 @@
-name: Deploy to Cloud Run
+name: Cloud Run Deployment
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'application/cloudrun/**'
+
   push:
     branches:
       - main
+    paths:
+      - 'application/cloudrun/**'
 
+# --------- STEP 1: PR Checks (Security Scan only) ---------
 jobs:
-  deploy:
-    name: Build and Deploy
+  pr_security_scan:
+    if: github.event_name == 'pull_request'
+    name: PR Security Scan
     runs-on: ubuntu-latest
-    env:
-      IMAGE: europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
+      - name: setup python 3.12
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m  pip install --upgrade pip
+          pip install flake8 pytest
+          if [-f requirements.txt]; then pip install -r requirements.txt; fi
+
+      - name: Lint the flakes
+        run: |
+          # stop the build if there aare python errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The Github editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+# --------- STEP 2: Post-Merge Deployment Flow ---------
+  post_merge_security_scan:
+    if: github.event_name == 'push'
+    name: Post-Merge SonarQube Scan
+    runs-on: ubuntu-latest
+    outputs:
+      scan_result: ${{ steps.scan.outcome }}
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
@@ -31,23 +67,22 @@ jobs:
     #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     #       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-    - name: setup python 3.12
-      uses: actions/setup-python@v3
-      with:
-         python-version: "3.12"
+    # - name: SonarQube Quality Gate fails
+    #   if: steps.quality_check.outcome != 'success'
+    #   run: |
+    #     echo  "SonarQube Quality Gate check failed. Stopping pipeline."
+    #     exit 1
 
-    - name: Install dependencies
-      run: |
-         python -m  pip install --upgrade pip
-         pip install flake8 pytest
-         if [-f requirements.txt]; then pip install -r requirements.txt; fi
+  deploy:
+    if: github.event_name == 'push'
+    name: Build, Scan and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
 
-    - name: Lint the flakes
-      run: |
-       # stop the build if there aare python errors or undefined names
-       flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-       # exit-zero treats all errors as warnings. The Github editor is 127 chars wide
-       flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
     - name: Authenticate to GCP
       uses: google-github-actions/auth@v2
@@ -58,10 +93,6 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: vast-silicon-456014-j2
-
-
-    # - name: Configure Docker for Artifact Registry
-    #   run: gcloud auth configure-docker europe-west2-docker.pkg.dev
 
     - name: Build and Push Docker Image
       run: |
@@ -86,6 +117,12 @@ jobs:
     #   with:
     #     sarif_file: ${{ steps.scan.outputs.sarif_file }}
 
+    # - name: Check Prisma Scan Result
+    #   if: steps.prisma_scan.outcome != 'success'
+    #   run: |
+    #     echo "Prisma scan failed, stopping deployment."
+    #     exit 1
+
     - name: Push Docker Image
       run: |
         docker push $IMAGE
@@ -98,3 +135,23 @@ jobs:
           --region europe-west2 \
           --platform managed \
           --allow-unauthenticated
+
+    - name: Verify Cloud Run Deployment
+      run: |
+        echo "Fetching service URL..."
+        SERVICE_URL=$(gcloud run services describe flask-app \
+          --platform managed \
+          --region europe-west2 \
+          --format='value(status.url)')
+
+        echo "Deployed Service URL: $SERVICE_URL"
+
+        echo "Verifying endpoint availability..."
+        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL/healthz")
+
+        if [ "$HTTP_STATUS" -ne 200 ]; then
+          echo ""Health check failed with status $HTTP_STATUS"
+          exit 1
+        else
+          echo "Cloud Run service is healthy!"
+        fi
