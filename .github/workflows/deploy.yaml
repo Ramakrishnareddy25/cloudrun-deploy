@@ -145,7 +145,7 @@ jobs:
         echo "Deployed Service URL: $SERVICE_URL"
 
         echo "Verifying endpoint availability..."
-        curl --fail $SERVICE_UR || {
+        curl --fail $SERVICE_URL || {
           echo "Endpoint verification failed."
          exit 1
         }
