@@ -1,22 +1,14 @@
 name: Cloud Run Deployment
 
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'application/cloudrun/**'
-
   push:
     branches:
       - main
-    paths:
-      - 'application/cloudrun/**'
 
 # --------- STEP 1: PR Checks (Security Scan only) ---------
 jobs:
   pr_security_scan:
-    if: github.event_name == 'pull_request'
+    # if: github.event_name == 'pull_request'
     name: PR Security Scan
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +35,7 @@ jobs:
 
 # --------- STEP 2: Post-Merge Deployment Flow ---------
   post_merge_security_scan:
-    if: github.event_name == 'push'
+    # if: github.event_name == 'push'
     name: Post-Merge SonarQube Scan
     runs-on: ubuntu-latest
     outputs:
