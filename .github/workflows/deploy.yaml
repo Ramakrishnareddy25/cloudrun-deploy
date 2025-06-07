@@ -145,11 +145,7 @@ jobs:
         echo "Deployed Service URL: $SERVICE_URL"
 
         echo "Verifying endpoint availability..."
-        HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL")
-
-        if [ "$HTTP_STATUS" -ne 200 ]; then
-          echo ""Health check failed with status $HTTP_STATUS"
-          exit 1
-        else
-          echo "Cloud Run service is healthy!"
-        fi
+        curl --fail $SERVICE_UR || {
+          echo "Endpoint verification failed."
+         exit 1
+        }
