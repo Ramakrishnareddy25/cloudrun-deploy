@@ -1,151 +1,151 @@
-name: Cloud Run Deployment
+# name: Cloud Run Deployment
 
-on:
-  push:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
 
-# --------- STEP 1: PR Checks (Security Scan only) ---------
-jobs:
-  pr_security_scan:
-    # if: github.event_name == 'pull_request'
-    name: PR Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+# # --------- STEP 1: PR Checks (Security Scan only) ---------
+# jobs:
+#   pr_security_scan:
+#     # if: github.event_name == 'pull_request'
+#     name: PR Security Scan
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout Code
+#         uses: actions/checkout@v3
 
-      - name: setup python 3.12
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.12"
+#       - name: setup python 3.12
+#         uses: actions/setup-python@v3
+#         with:
+#           python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          python -m  pip install --upgrade pip
-          pip install flake8 pytest
-          if [-f requirements.txt]; then pip install -r requirements.txt; fi
+#       - name: Install dependencies
+#         run: |
+#           python -m  pip install --upgrade pip
+#           pip install flake8 pytest
+#           if [-f requirements.txt]; then pip install -r requirements.txt; fi
 
-      - name: Lint the flakes
-        run: |
-          # stop the build if there aare python errors or undefined names
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The Github editor is 127 chars wide
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+#       - name: Lint the flakes
+#         run: |
+#           # stop the build if there aare python errors or undefined names
+#           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+#           # exit-zero treats all errors as warnings. The Github editor is 127 chars wide
+#           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-# --------- STEP 2: Post-Merge Deployment Flow ---------
-  post_merge_security_scan:
-    # if: github.event_name == 'push'
-    name: Post-Merge SonarQube Scan
-    runs-on: ubuntu-latest
-    outputs:
-      scan_result: ${{ steps.scan.outcome }}
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+# # --------- STEP 2: Post-Merge Deployment Flow ---------
+#   post_merge_security_scan:
+#     # if: github.event_name == 'push'
+#     name: Post-Merge SonarQube Scan
+#     runs-on: ubuntu-latest
+#     outputs:
+#       scan_result: ${{ steps.scan.outcome }}
+#     steps:
+#     - name: Checkout Code
+#       uses: actions/checkout@v3
 
-    # - name: SonarQube Scan
-    #   uses: SonarSource/sonarqube-scan-action@v5.2.0 # Ex: v4.1.0, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
-    #   env:
-    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+#     # - name: SonarQube Scan
+#     #   uses: SonarSource/sonarqube-scan-action@v5.2.0 # Ex: v4.1.0, See the latest version at https://github.com/marketplace/actions/official-sonarqube-scan
+#     #   env:
+#     #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#     #     SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-    # - name: SonarQube Quality Gate check
-    #   id: sonarqube-quality-gate-check
-    #   uses: sonarsource/sonarqube-quality-gate-action@master
-    #   with:
-    #       pollingTimeoutSec: 600
-    #   env:
-    #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-    #       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+#     # - name: SonarQube Quality Gate check
+#     #   id: sonarqube-quality-gate-check
+#     #   uses: sonarsource/sonarqube-quality-gate-action@master
+#     #   with:
+#     #       pollingTimeoutSec: 600
+#     #   env:
+#     #       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+#     #       SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
 
-    # - name: SonarQube Quality Gate fails
-    #   if: steps.quality_check.outcome != 'success'
-    #   run: |
-    #     echo  "SonarQube Quality Gate check failed. Stopping pipeline."
-    #     exit 1
+#     # - name: SonarQube Quality Gate fails
+#     #   if: steps.quality_check.outcome != 'success'
+#     #   run: |
+#     #     echo  "SonarQube Quality Gate check failed. Stopping pipeline."
+#     #     exit 1
 
-  deploy:
-    if: github.event_name == 'push'
-    name: Build, Scan and Deploy to Cloud Run
-    runs-on: ubuntu-latest
-    env:
-      IMAGE: europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
+#   deploy:
+#     if: github.event_name == 'push'
+#     name: Build, Scan and Deploy to Cloud Run
+#     runs-on: ubuntu-latest
+#     env:
+#       IMAGE: europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
 
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+#     steps:
+#     - name: Checkout Code
+#       uses: actions/checkout@v3
 
-    - name: Authenticate to GCP
-      uses: google-github-actions/auth@v2
-      with:
-        credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
+#     - name: Authenticate to GCP
+#       uses: google-github-actions/auth@v2
+#       with:
+#         credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
-    - name: Set up gcloud CLI
-      uses: google-github-actions/setup-gcloud@v2
-      with:
-        project_id: vast-silicon-456014-j2
+#     - name: Set up gcloud CLI
+#       uses: google-github-actions/setup-gcloud@v2
+#       with:
+#         project_id: vast-silicon-456014-j2
 
-    - name: Build and Push Docker Image
-      run: |
-        gcloud auth configure-docker europe-west2-docker.pkg.dev
-        docker build -t $IMAGE .
+#     - name: Build and Push Docker Image
+#       run: |
+#         gcloud auth configure-docker europe-west2-docker.pkg.dev
+#         docker build -t $IMAGE .
 
 
-    # # https://github.com/marketplace/actions/prisma-cloud-scan
-    # - name: Prisma Cloud image scan
-    #   id: scan
-    #   uses: PaloAltoNetworks/prisma-cloud-scan@v1.5
-    #   with:
-    #      pcc_console_url: ${{ secrets.PCC_CONSOLE_URL }}
-    #      pcc_user: ${{ secrets.PCC_USER }}
-    #      pcc_pass: ${{ secrets.PCC_PASS }}
-    #      image_name: $IMAGE
+#     # # https://github.com/marketplace/actions/prisma-cloud-scan
+#     # - name: Prisma Cloud image scan
+#     #   id: scan
+#     #   uses: PaloAltoNetworks/prisma-cloud-scan@v1.5
+#     #   with:
+#     #      pcc_console_url: ${{ secrets.PCC_CONSOLE_URL }}
+#     #      pcc_user: ${{ secrets.PCC_USER }}
+#     #      pcc_pass: ${{ secrets.PCC_PASS }}
+#     #      image_name: $IMAGE
 
-    #   # (Optional) for compatibility with GitHub's code scanning alerts
-    # - name: Upload SARIF file
-    #   if: ${{ always() }} # necessary if using failure thresholds in the image scan
-    #   uses: github/codeql-action/upload-sarif@v2
-    #   with:
-    #     sarif_file: ${{ steps.scan.outputs.sarif_file }}
+#     #   # (Optional) for compatibility with GitHub's code scanning alerts
+#     # - name: Upload SARIF file
+#     #   if: ${{ always() }} # necessary if using failure thresholds in the image scan
+#     #   uses: github/codeql-action/upload-sarif@v2
+#     #   with:
+#     #     sarif_file: ${{ steps.scan.outputs.sarif_file }}
 
-    # - name: Check Prisma Scan Result
-    #   if: steps.prisma_scan.outcome != 'success'
-    #   run: |
-    #     echo "Prisma scan failed, stopping deployment."
-    #     exit 1
+#     # - name: Check Prisma Scan Result
+#     #   if: steps.prisma_scan.outcome != 'success'
+#     #   run: |
+#     #     echo "Prisma scan failed, stopping deployment."
+#     #     exit 1
 
-    - name: Push Docker Image
-      run: |
-        docker push $IMAGE
+#     - name: Push Docker Image
+#       run: |
+#         docker push $IMAGE
 
-    - name: Deploy to Cloud Run
-      run: |
-        IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
-        gcloud run deploy flask-app \
-          --image $IMAGE \
-          --region europe-west2 \
-          --platform managed \
-          --allow-unauthenticated
+#     - name: Deploy to Cloud Run
+#       run: |
+#         IMAGE=europe-west2-docker.pkg.dev/vast-silicon-456014-j2/test-repo/test:latest
+#         gcloud run deploy flask-app \
+#           --image $IMAGE \
+#           --region europe-west2 \
+#           --platform managed \
+#           --allow-unauthenticated
 
-    - name: Wait for service to stabilize
-      run: |
-       echo "Sleeping for 60 seconds..."
-       sleep 60
-       echo "Resuming workflow."
+#     - name: Wait for service to stabilize
+#       run: |
+#        echo "Sleeping for 60 seconds..."
+#        sleep 60
+#        echo "Resuming workflow."
 
-    - name: Verify Cloud Run Deployment
-      run: |
-        echo "Fetching service URL..."
-        SERVICE_URL=$(gcloud run services describe flask-app \
-          --platform managed \
-          --region europe-west2 \
-          --format='value(status.url)')
+#     - name: Verify Cloud Run Deployment
+#       run: |
+#         echo "Fetching service URL..."
+#         SERVICE_URL=$(gcloud run services describe flask-app \
+#           --platform managed \
+#           --region europe-west2 \
+#           --format='value(status.url)')
 
-        echo "Deployed Service URL: $SERVICE_URL"
+#         echo "Deployed Service URL: $SERVICE_URL"
 
-        echo "Verifying endpoint availability..."
-        curl --fail $SERVICE_URL || {
-          echo "Endpoint verification failed."
-         exit 1
-        }
+#         echo "Verifying endpoint availability..."
+#         curl --fail $SERVICE_URL || {
+#           echo "Endpoint verification failed."
+#          exit 1
+#         }
