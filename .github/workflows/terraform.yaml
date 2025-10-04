@@ -11,7 +11,7 @@ on:
 env:
   TF_VERSION: 6.28.0
   TF_WORKING_DIR: ./terraform
-  GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
+
 
 jobs:
   terraform-pr-checks:
@@ -26,11 +26,16 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Configure GCP Credentials
-        run: |
-          echo "${{ secrets.GCP_CREDENTIALS_JSON }}" > $GOOGLE_APPLICATION_CREDENTIALS
-          chmod 600 $GOOGLE_APPLICATION_CREDENTIALS
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+         credentials_json: '${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}'
 
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: xenon-alliance-465110-v6
+          
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -input=false
