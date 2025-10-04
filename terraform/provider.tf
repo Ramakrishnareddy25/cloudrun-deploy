@@ -11,7 +11,6 @@ terraform {
 
 provider "google" {
   region      = "us-central1"
-  credentials = "./key.json"
   project     = "xenon-alliance-465110-v6"
 }
 
