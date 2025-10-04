@@ -1,5 +1,5 @@
 terraform {
-  required_version = "1.9.2"
+  required_version = "1.9.6"
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -11,7 +11,6 @@ terraform {
 
 provider "google" {
   region      = "us-central1"
-  credentials = "./key.json"
   project     = "xenon-alliance-465110-v6"
 }
 
@@ -21,4 +20,3 @@ terraform {
     prefix  = "terraform/state"
   }
 }
-
